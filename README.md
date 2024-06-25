@@ -17,6 +17,13 @@ This script prints the directory tree of a specified root directory, with option
 1. Clone the repository or download the script.
 2. Ensure you have Python installed on your system.
 
+## Download Executables
+
+You can download the pre-built executables for different platforms from the latest release:
+
+- [Download for Windows](https://github.com/ramihsn/tree/releases/latest/download/tree.exe)
+- [Download for Linux](https://github.com/ramihsn/tree/releases/latest/download/tree)
+
 ## Usage
 
 Run the script with the desired options:
