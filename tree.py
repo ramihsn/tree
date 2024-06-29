@@ -1,9 +1,15 @@
+from configparser import ConfigParser
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
+import re
 
 # Default directories to exclude from the tree output
-_DEFAULT_FILTERED_DIRS = ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode']
+if Path('.tree.ini').exists():
+    (config := ConfigParser()).read('.tree.ini')
+    _DEFAULT_FILTERED_DIRS = config['filter'].get('exclude', '').split(',')
+else:
+    _DEFAULT_FILTERED_DIRS = ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode']
 
 
 def _print_folders(dirs: list[Path], indent: str, files: bool = False, exclude_dirs=None, folders_first=False):
@@ -113,6 +119,10 @@ def main():
     Main function to execute the directory tree printing.
     """
     args = _parse_args()
+
+    # Remove leading/trailing slashes and './' from the filter list
+    args.filter = [re.sub(r'^./|^/|/$', '', file) for file in args.filter]
+
     root: Path = args.root.resolve()
     print(root.name)
     _print_tree(args.root, "", args.filter, args.folders_first)
