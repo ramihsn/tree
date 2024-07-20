@@ -12,7 +12,7 @@ if Path('.tree.ini').exists():
     (config := ConfigParser()).read('.tree.ini')
     _DEFAULT_FILTERED_DIRS = config['filter'].get('exclude', '').split(',')
 else:
-    _DEFAULT_FILTERED_DIRS = ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode']
+    _DEFAULT_FILTERED_DIRS = ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode', 'node_modules']
 _DEFAULT_FILTERED_DIRS = [Path(item) for item in _DEFAULT_FILTERED_DIRS]
 
 
@@ -119,9 +119,12 @@ def _parse_args():
     parser.add_argument('-f', '--filter', nargs='*', default=_DEFAULT_FILTERED_DIRS, type=Path,
                         help="List of directories to exclude. If no arguments are provided, "
                              "the default excludes are used. To include all directories, "
-                             "pass an empty string (e.g., -f '').")
-    parser.add_argument('-F', '--folders-first', action='store_true', help="Print folders before files")
-    parser.add_argument('-o', '--output-file', dest='file', help="Save the output to a file")
+                             "pass an empty string (e.g., -f ''). "
+                             f"(default: {[i.name for i in _DEFAULT_FILTERED_DIRS]}")
+    parser.add_argument('-F', '--folders-first', action='store_true',
+                        help="Print folders before files. (default: %(default)s)")
+    parser.add_argument('-o', '--output-file', dest='file',
+                        help="Save the output to a file. (default: %(default)s)")
     return parser.parse_args()
 
 

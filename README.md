@@ -33,9 +33,10 @@ python tree_exclude.py [options]
 ```
 
 ### Options
-* -r, --root: The root directory to start the tree. Default is the directory where the script is located.
-* -f, --filter: List of directories to exclude. If no arguments are provided, the default excludes are used. To include all directories, pass an empty string (e.g., -f '').
-* -F, --folders-first: Print folders before files.
+* -r, --root ROOT: The root directory to start the tree. (default: the current working directory).
+* -f, --filter FILTER: List of directories to exclude. If no arguments are provided, the default excludes are used. To include all directories, pass an empty string (e.g., -f ''). (default: ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode', 'node_modules'])
+* -F, --folders-first: Print folders before files. (default: False)
+* -o, --output-file FILE: Save the output to a file. (default: None)
 
 ## Examples
 #### Without flags
