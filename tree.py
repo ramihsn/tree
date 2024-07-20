@@ -2,7 +2,6 @@ from configparser import ConfigParser
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
-import re
 
 # Default directories to exclude from the tree output
 if Path('.tree.ini').exists():
@@ -10,6 +9,14 @@ if Path('.tree.ini').exists():
     _DEFAULT_FILTERED_DIRS = config['filter'].get('exclude', '').split(',')
 else:
     _DEFAULT_FILTERED_DIRS = ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode']
+_DEFAULT_FILTERED_DIRS = [Path(item) for item in _DEFAULT_FILTERED_DIRS]
+
+
+class PathList(list[Path]):
+    def __contains__(self, key: Path) -> bool:
+        if not super().__contains__(key):
+            return key.stem in [item.name for item in self]
+        return True
 
 
 def _print_folders(dirs: list[Path], indent: str, files: bool = False, exclude_dirs=None, folders_first=False):
@@ -68,7 +75,7 @@ def _sort_key(p: Path, folders_first: bool):
     return (p.is_file(), p.name.lower())
 
 
-def _print_tree(dir_path: Path, indent: str = "", exclude_dirs: list[str] = None, folders_first: bool = False):
+def _print_tree(dir_path: Path, indent: str = "", exclude_dirs: PathList[Path] = None, folders_first: bool = False):
     '''
     Recursively print the directory tree.
 
@@ -85,7 +92,7 @@ def _print_tree(dir_path: Path, indent: str = "", exclude_dirs: list[str] = None
     contents = sorted(dir_path.iterdir(), key=partial(_sort_key, folders_first=folders_first))
 
     files = [item for item in contents if item.is_file()]
-    dirs = [item for item in contents if item.is_dir() and item.name not in exclude_dirs]
+    dirs = [item for item in contents if item.is_dir() and item not in exclude_dirs]
 
     if folders_first:
         _print_folders(dirs, indent, files, exclude_dirs, folders_first)
@@ -105,7 +112,7 @@ def _parse_args():
     parser = ArgumentParser(description="Print the directory tree")
     parser.add_argument("-r", '--root', type=Path, default=Path('.'),
                         help="The root directory to start the tree, defaults to the current directory.")
-    parser.add_argument('-f', '--filter', nargs='*', default=_DEFAULT_FILTERED_DIRS,
+    parser.add_argument('-f', '--filter', nargs='*', default=_DEFAULT_FILTERED_DIRS, type=Path,
                         help="List of directories to exclude. If no arguments are provided, "
                              "the default excludes are used. To include all directories, "
                              "pass an empty string (e.g., -f '').")
@@ -120,12 +127,9 @@ def main():
     """
     args = _parse_args()
 
-    # Remove leading/trailing slashes and './' from the filter list
-    args.filter = [re.sub(r'^./|^/|/$', '', file) for file in args.filter]
-
     root: Path = args.root.resolve()
     print(root.name)
-    _print_tree(args.root, "", args.filter, args.folders_first)
+    _print_tree(args.root, "", PathList(args.filter), args.folders_first)
 
 
 if __name__ == "__main__":
