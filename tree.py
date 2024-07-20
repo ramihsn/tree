@@ -3,6 +3,9 @@ from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
 import platform
+import logging
+
+logger = logging.getLogger("Tree")
 
 # Default directories to exclude from the tree output
 if Path('.tree.ini').exists():
@@ -36,7 +39,7 @@ def _print_folders(dirs: list[Path], indent: str, files: bool = False, exclude_d
         # Determine the pointer symbol based on the position of the directory
         pointer = '└── ' if is_last_dir and not (folders_first or not files) else '├── '
 
-        print(f"{indent}{pointer}{dir.name}")
+        logger.info(f"{indent}{pointer}{dir.name}")
         extension = '    ' if pointer == '└── ' else '│   '
         _print_tree(dir, indent + extension, exclude_dirs, folders_first)
 
@@ -55,7 +58,7 @@ def _print_files(files: list[Path], indent: str, dirs: bool = False, folders_fir
         is_last_file = (i == len(files) - 1)
         # Determine the pointer symbol based on the position of the file
         pointer = '└── ' if is_last_file and (folders_first or not dirs) else '├── '
-        print(f"{indent}{pointer}{file.name}")
+        logger.info(f"{indent}{pointer}{file.name}")
 
 
 def _sort_key(p: Path, folders_first: bool):
@@ -118,7 +121,7 @@ def _parse_args():
                              "the default excludes are used. To include all directories, "
                              "pass an empty string (e.g., -f '').")
     parser.add_argument('-F', '--folders-first', action='store_true', help="Print folders before files")
-
+    parser.add_argument('-o', '--output-file', dest='file', help="Save the output to a file")
     return parser.parse_args()
 
 
@@ -127,9 +130,17 @@ def main():
     Main function to execute the directory tree printing.
     """
     args = _parse_args()
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(message)s',
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(args.file, mode='w', encoding='utf-8'),
+        ] if args.file else None
+    )
 
     root: Path = args.root.resolve()
-    print(root.name)
+    logger.info(root.name)
     _print_tree(args.root, "", PathList(args.filter), args.folders_first)
 
 
