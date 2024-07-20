@@ -2,6 +2,7 @@ from configparser import ConfigParser
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
+import platform
 
 # Default directories to exclude from the tree output
 if Path('.tree.ini').exists():
@@ -133,4 +134,9 @@ def main():
 
 
 if __name__ == "__main__":
+    if platform.system() == 'Windows':
+        import sys
+        import codecs
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
+
     main()
