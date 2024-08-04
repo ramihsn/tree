@@ -37,27 +37,28 @@ python tree_exclude.py [options]
 * -f, --filter FILTER: List of directories to exclude. If no arguments are provided, the default excludes are used. To include all directories, pass an empty string (e.g., -f ''). (default: ['.venv', '.pytest_cache', '__pycache__', '.git', '.vscode', 'node_modules'])
 * -F, --folders-first: Print folders before files. (default: False)
 * -o, --output-file FILE: Save the output to a file. (default: None)
+* -d --max-depth DEPTH: the max depth of the tree to print
 
 ## Examples
 #### Without flags
 ```sh
-py .\tree.py
+py tree.py
 tree
 ├── .flake8
 ├── README.md
 ├── tree.py
-└── folder-1
+└── folder-1/
     ├── file-1
     ├── file-2
-    └── folder-2
+    └── folder-2/
         └── file-1
 ```
 #### With reversing the print output
 ```sh
-py .\tree.py -F
+py tree.py -F
 tree
-├── folder-1
-│   ├── folder-2
+├── folder-1/
+│   ├── folder-2/
 │   │   └── file-1
 │   ├── file-1
 │   └── file-2
@@ -67,52 +68,65 @@ tree
 ```
 #### With different root
 ```sh
-py .\tree.py -r .\folder-1\
+py tree.py -r .\folder-1\
 folder-1
 ├── file-1
 ├── file-2
-└── folder-2
+└── folder-2/
     └── file-1
 ```
 #### With filter
 ```sh
-py .\tree.py -f folder-2
+py tree.py -f folder-2
 tree
 ├── .flake8
 ├── README.md
 ├── tree.py
-└── folder-1
+└── folder-1/
     ├── file-1
     └── file-2
 ```
 #### With removing all filters
 ```sh
-py .\tree.py -f
+py tree.py -f
 tree
 ├── .flake8
 ├── README.md
 ├── tree.py
-├── .git
+├── .git/
 │   ├── COMMIT_EDITMSG
 │   ├── config
 │   ├── FETCH_HEAD
 │   ├── HEAD
 │   ├── index
-│   ├── hooks
+│   ├── hooks/
 │   │   └── pre-push
 │   ├── logs
-│   └── refs
-│       ├── heads
+│   └── refs/
+│       ├── heads/
 │       │   └── main
-│       ├── remotes
-│       │   └── origin
+│       ├── remotes/
+│       │   └── origin/
 │       │       └── main
 │       └── tags
-└── folder-1
+└── folder-1/
     ├── file-1
     ├── file-2
-    └── folder-2
+    └── folder-2/
         └── file-1
+```
+
+#### With setting the max print depth
+```sh
+py tree.py -d 2
+tree
+├── .flake8
+├── README.md
+├── tree.py
+└── folder-1/
+    ├── file-1
+    ├── file-2
+    └── folder-2/
 ```
 
 ## Configuration

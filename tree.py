@@ -1,7 +1,8 @@
+from argparse import ArgumentParser, ArgumentTypeError
 from configparser import ConfigParser
-from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
+import dataclasses
 import platform
 import logging
 
@@ -23,7 +24,23 @@ class PathList(list[Path]):
         return True
 
 
-def _print_folders(dirs: list[Path], indent: str, files: bool = False, exclude_dirs=None, folders_first=False):
+@dataclasses.dataclass(slots=True)
+class PrintConfig:
+    depth: int
+    indent: str = ""
+    exclude_dirs: PathList[Path] = None
+    folders_first: bool = False
+
+    def copy_from(self, /, *, depth: int = None, indent: str = None):
+        return PrintConfig(
+            depth=depth if depth is not None else self.depth,
+            indent=indent if indent is not None else self.indent,
+            exclude_dirs=self.exclude_dirs,
+            folders_first=self.folders_first
+        )
+
+
+def _print_folders(dirs: list[Path], /, *, config: PrintConfig, files: bool = False):
     '''
     Print directories in a tree structure.
 
@@ -37,11 +54,11 @@ def _print_folders(dirs: list[Path], indent: str, files: bool = False, exclude_d
     for i, dir in enumerate(dirs):
         is_last_dir = (i == len(dirs) - 1)
         # Determine the pointer symbol based on the position of the directory
-        pointer = '└── ' if is_last_dir and not (folders_first or not files) else '├── '
+        pointer = '└── ' if is_last_dir and not (config.folders_first or not files) else '├── '
 
-        logger.info(f"{indent}{pointer}{dir.name}")
+        logger.info(f"{config.indent}{pointer}{dir.name}/")
         extension = '    ' if pointer == '└── ' else '│   '
-        _print_tree(dir, indent + extension, exclude_dirs, folders_first)
+        _print_tree(dir, config=config.copy_from(indent=config.indent + extension))
 
 
 def _print_files(files: list[Path], indent: str, dirs: bool = False, folders_first=False):
@@ -79,7 +96,7 @@ def _sort_key(p: Path, folders_first: bool):
     return (p.is_file(), p.name.lower())
 
 
-def _print_tree(dir_path: Path, indent: str = "", exclude_dirs: PathList[Path] = None, folders_first: bool = False):
+def _print_tree(dir_path: Path, /, *, config: PrintConfig):
     '''
     Recursively print the directory tree.
 
@@ -91,19 +108,27 @@ def _print_tree(dir_path: Path, indent: str = "", exclude_dirs: PathList[Path] =
     '''
     if not dir_path.is_dir():
         return
+    if config.depth == 0:
+        return
 
     # Sort contents based on the folders_first flag
-    contents = sorted(dir_path.iterdir(), key=partial(_sort_key, folders_first=folders_first))
+    contents = sorted(dir_path.iterdir(), key=partial(_sort_key, folders_first=config.folders_first))
 
     files = [item for item in contents if item.is_file()]
-    dirs = [item for item in contents if item.is_dir() and item not in exclude_dirs]
+    dirs = [item for item in contents if item.is_dir() and item not in config.exclude_dirs]
 
-    if folders_first:
-        _print_folders(dirs, indent, files, exclude_dirs, folders_first)
-        _print_files(files, indent, dirs, folders_first)
+    if config.folders_first:
+        _print_folders(dirs, config=config.copy_from(depth=config.depth - 1), files=files)
+        _print_files(files, config.indent, dirs, config.folders_first)
     else:
-        _print_files(files, indent, dirs, folders_first)
-        _print_folders(dirs, indent, files, exclude_dirs, folders_first)
+        _print_files(files, config.indent, dirs, config.folders_first)
+        _print_folders(dirs, config=config.copy_from(depth=config.depth - 1), files=files)
+
+
+def _pos_int(input: str):
+    if not input.isdecimal():
+        raise ArgumentTypeError(f"invalid positive int value: {input!r}")
+    return int(input)
 
 
 def _parse_args():
@@ -125,6 +150,8 @@ def _parse_args():
                         help="Print folders before files. (default: %(default)s)")
     parser.add_argument('-o', '--output-file', dest='file',
                         help="Save the output to a file. (default: %(default)s)")
+    parser.add_argument('-d', '--max-depth', dest='depth', type=_pos_int, default=float('inf'),
+                        help='the max depth of the tree to print')
     return parser.parse_args()
 
 
@@ -144,7 +171,11 @@ def main():
 
     root: Path = args.root.resolve()
     logger.info(root.name)
-    _print_tree(args.root, "", PathList(args.filter), args.folders_first)
+    if args.depth < 1:
+        return
+
+    cfg = PrintConfig(depth=args.depth, exclude_dirs=PathList(args.filter), folders_first=args.folders_first)
+    _print_tree(args.root, config=cfg)
 
 
 if __name__ == "__main__":
